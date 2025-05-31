@@ -7,12 +7,10 @@ import {IERC20} from '@openzeppelin/token/ERC20/IERC20.sol';
 import {SafeERC20} from '@openzeppelin/token/ERC20/utils/SafeERC20.sol';
 import {ReentrancyGuard} from '@openzeppelin/utils/ReentrancyGuard.sol';
 
-
 // Internal Imports
 import {ISwapperV1} from 'interfaces/ISwapperV1.sol';
 
 contract SwapperV1 is ISwapperV1, Ownable, ReentrancyGuard {
-
   using SafeERC20 for IERC20;
 
   /*///////////////////////////////////////////////////////////////
@@ -41,6 +39,8 @@ contract SwapperV1 is ISwapperV1, Ownable, ReentrancyGuard {
     //////////////////////////////////////////////////////////////*/
 
   constructor(address _depositedToken, address _swappedToken) Ownable(msg.sender) {
+    if (_depositedToken == _swappedToken) revert SwapperV1_InvalidTokens();
+
     DEPOSITED_TOKEN = _depositedToken;
     SWAPPED_TOKEN = _swappedToken;
   }
@@ -51,7 +51,6 @@ contract SwapperV1 is ISwapperV1, Ownable, ReentrancyGuard {
 
   /// @inheritdoc ISwapperV1
   function deposit(uint256 _amount) external payable onlyNotSwapped {
-
     if (_amount == 0) revert SwapperV1_InvalidAmount();
 
     SwapInfo storage _swapInfo = _userToSwapInfo[msg.sender];
@@ -71,10 +70,9 @@ contract SwapperV1 is ISwapperV1, Ownable, ReentrancyGuard {
   }
 
   /// @inheritdoc ISwapperV1
-  function swap() external onlyOwner onlyNotSwapped payable nonReentrant {
-
+  function swap() external payable onlyOwner onlyNotSwapped nonReentrant {
     uint256 _tokenBalance = _getTokenBalance(DEPOSITED_TOKEN);
-  
+
     // Deposit tokens into contract
     if (SWAPPED_TOKEN != address(0)) {
       IERC20(SWAPPED_TOKEN).safeTransferFrom(msg.sender, address(this), _tokenBalance);
@@ -85,6 +83,9 @@ contract SwapperV1 is ISwapperV1, Ownable, ReentrancyGuard {
       revert SwapperV1_NotEnoughLiquidity();
     }
 
+    // Set the swapped flag to true
+    swapped = true;
+
     // Transfer the tokens to the owner
     if (DEPOSITED_TOKEN == address(0)) {
       payable(msg.sender).transfer(_tokenBalance);
@@ -92,15 +93,13 @@ contract SwapperV1 is ISwapperV1, Ownable, ReentrancyGuard {
       IERC20(DEPOSITED_TOKEN).safeTransfer(msg.sender, _tokenBalance);
     }
 
-    swapped = true;
-
     /// @dev swap is 1:1 so we can use the same amount for both
     emit TokensSwapped(_tokenBalance, _tokenBalance);
   }
 
   /// @inheritdoc ISwapperV1
   function withdrawDeposit() external onlyNotSwapped nonReentrant {
-    SwapInfo storage _swapInfo = _userToSwapInfo[msg.sender];
+    SwapInfo memory _swapInfo = _userToSwapInfo[msg.sender];
 
     if (_swapInfo.depositTokenAmount == 0) revert SwapperV1_NoTokensToWithdraw();
 
@@ -120,14 +119,11 @@ contract SwapperV1 is ISwapperV1, Ownable, ReentrancyGuard {
 
   /// @inheritdoc ISwapperV1
   function withdraw() external nonReentrant {
-
-    if (!swapped) revert SwapperV1_SwapNotExecuted();
-
     SwapInfo storage _swapInfo = _userToSwapInfo[msg.sender];
 
-    if (_swapInfo.depositTokenAmount == 0) revert SwapperV1_NoTokensToWithdraw();
-
     if (_swapInfo.hasWithdrawn) revert SwapperV1_AlreadyWithdrawn();
+
+    if (_swapInfo.depositTokenAmount == 0) revert SwapperV1_NoTokensToWithdraw();
 
     uint256 _swapTokenAmount = getSwapTokenAmount(msg.sender);
 
@@ -146,19 +142,23 @@ contract SwapperV1 is ISwapperV1, Ownable, ReentrancyGuard {
   }
 
   /// @inheritdoc ISwapperV1
-  function userToSwapInfo(address _user) external view returns (SwapInfo memory) {
-    return _userToSwapInfo[_user];
+  function emergencyWithdraw(address token, uint256 amount) external onlyOwner {
+    if (amount == 0) revert SwapperV1_NoTokensToWithdraw();
+
+    if (_getTokenBalance(token) < amount) revert SwapperV1_NotEnoughLiquidity();
+
+    if (token == address(0)) {
+      payable(msg.sender).transfer(amount);
+    } else {
+      IERC20(token).safeTransfer(msg.sender, amount);
+    }
+    emit EmergencyWithdraw(msg.sender, token, amount);
   }
 
   /// @inheritdoc ISwapperV1
-  function emergencyWithdraw(address token, uint256 amount) external onlyOwner {
-    if (token == address(0)) {
-        payable(msg.sender).transfer(amount);
-    } else {
-        IERC20(token).safeTransfer(msg.sender, amount);
-    }
-    emit EmergencyWithdraw(msg.sender, token, amount);
-}
+  function userToSwapInfo(address _user) external view returns (SwapInfo memory) {
+    return _userToSwapInfo[_user];
+  }
 
   /*///////////////////////////////////////////////////////////////
                             Public Functions
@@ -166,10 +166,12 @@ contract SwapperV1 is ISwapperV1, Ownable, ReentrancyGuard {
 
   /// @inheritdoc ISwapperV1
   function getSwapTokenAmount(address _user) public view returns (uint256) {
+    if (!swapped) revert SwapperV1_SwapNotExecuted();
+
     SwapInfo memory _swapInfo = _userToSwapInfo[_user];
     if (_swapInfo.hasWithdrawn) return 0;
-    /// @dev We can return deposit token amount (as this is a 1:1 swap) but this is a more flexible implementation
-    return (_swapInfo.depositTokenAmount * _getTokenBalance(SWAPPED_TOKEN)) / _getTokenBalance(DEPOSITED_TOKEN);
+    /// @dev We can return deposit token amount (as this is a 1:1 swap)
+    return _swapInfo.depositTokenAmount;
   }
 
   /*///////////////////////////////////////////////////////////////

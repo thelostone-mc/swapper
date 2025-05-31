@@ -96,6 +96,11 @@ interface ISwapperV1 {
    */
   error SwapperV1_NotEnoughLiquidity();
 
+  /**
+   * @notice Thrown if tokens are the same
+   */
+  error SwapperV1_InvalidTokens();
+
   /*///////////////////////////////////////////////////////////////
                             VARIABLES
   //////////////////////////////////////////////////////////////*/
@@ -158,5 +163,4 @@ interface ISwapperV1 {
    * @param amount The amount of tokens to withdraw
    */
   function emergencyWithdraw(address token, uint256 amount) external;
-
 }
