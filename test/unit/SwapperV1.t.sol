@@ -284,8 +284,10 @@ contract UnitSwapperV1 is Test {
   }
 
   function test_WithdrawWhenNoTokensToWithdraw() public {
+    test_SwapWhenSwappingToERC20TokensToTheContract();
+
     vm.expectRevert(ISwapperV1.SwapperV1_NoTokensToWithdraw.selector);
-    vm.prank(_bob);
+    vm.prank(makeAddr('user'));
     // it reverts
     nativeToERC20Swapper.withdraw();
   }

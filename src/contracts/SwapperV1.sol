@@ -29,8 +29,13 @@ contract SwapperV1 is ISwapperV1, Ownable, ReentrancyGuard {
   /// @notice Mapping of user to swap info
   mapping(address user => SwapInfo swapInfo) private _userToSwapInfo;
 
-  modifier onlyNotSwapped() {
+  modifier onlyBeforeSwap() {
     if (swapped) revert SwapperV1_SwapAlreadyExecuted();
+    _;
+  }
+
+  modifier onlyAfterSwap() {
+    if (!swapped) revert SwapperV1_SwapNotExecuted();
     _;
   }
 
@@ -50,7 +55,7 @@ contract SwapperV1 is ISwapperV1, Ownable, ReentrancyGuard {
     //////////////////////////////////////////////////////////////*/
 
   /// @inheritdoc ISwapperV1
-  function deposit(uint256 _amount) external payable onlyNotSwapped {
+  function deposit(uint256 _amount) external payable onlyBeforeSwap {
     if (_amount == 0) revert SwapperV1_InvalidAmount();
 
     SwapInfo storage _swapInfo = _userToSwapInfo[msg.sender];
@@ -59,6 +64,7 @@ contract SwapperV1 is ISwapperV1, Ownable, ReentrancyGuard {
     if (DEPOSITED_TOKEN == address(0)) {
       if (msg.value != _amount) revert SwapperV1_AmountMismatch();
     } else {
+      if (msg.value != 0) revert SwapperV1_AmountMismatch();
       // TODO: Can add IERC20Permit but not needed for now
       IERC20(DEPOSITED_TOKEN).safeTransferFrom(msg.sender, address(this), _amount);
     }
@@ -70,7 +76,7 @@ contract SwapperV1 is ISwapperV1, Ownable, ReentrancyGuard {
   }
 
   /// @inheritdoc ISwapperV1
-  function swap() external payable onlyOwner onlyNotSwapped nonReentrant {
+  function swap() external payable onlyOwner onlyBeforeSwap nonReentrant {
     uint256 _tokenBalance = _getTokenBalance(DEPOSITED_TOKEN);
 
     // Deposit tokens into contract
@@ -98,34 +104,39 @@ contract SwapperV1 is ISwapperV1, Ownable, ReentrancyGuard {
   }
 
   /// @inheritdoc ISwapperV1
-  function withdrawDeposit() external onlyNotSwapped nonReentrant {
+  function withdrawDeposit() external onlyBeforeSwap nonReentrant {
     SwapInfo memory _swapInfo = _userToSwapInfo[msg.sender];
 
-    if (_swapInfo.depositTokenAmount == 0) revert SwapperV1_NoTokensToWithdraw();
+    uint256 _withdrawAmount = _swapInfo.depositTokenAmount;
 
-    // Withdraw the tokens
-    if (DEPOSITED_TOKEN == address(0)) {
-      payable(msg.sender).transfer(_swapInfo.depositTokenAmount);
-    } else {
-      IERC20(DEPOSITED_TOKEN).safeTransfer(msg.sender, _swapInfo.depositTokenAmount);
-    }
+    if (_withdrawAmount == 0) revert SwapperV1_NoTokensToWithdraw();
 
     // Delete the swap
     delete _userToSwapInfo[msg.sender];
 
+    // Withdraw the tokens
+    if (DEPOSITED_TOKEN == address(0)) {
+      payable(msg.sender).transfer(_withdrawAmount);
+    } else {
+      IERC20(DEPOSITED_TOKEN).safeTransfer(msg.sender, _withdrawAmount);
+    }
+
     // Emit the event
-    emit DepositWithdrawn(msg.sender, _swapInfo.depositTokenAmount);
+    emit DepositWithdrawn(msg.sender, _withdrawAmount);
   }
 
   /// @inheritdoc ISwapperV1
-  function withdraw() external nonReentrant {
+  function withdraw() external onlyAfterSwap nonReentrant {
     SwapInfo storage _swapInfo = _userToSwapInfo[msg.sender];
 
     if (_swapInfo.hasWithdrawn) revert SwapperV1_AlreadyWithdrawn();
 
     if (_swapInfo.depositTokenAmount == 0) revert SwapperV1_NoTokensToWithdraw();
 
-    uint256 _swapTokenAmount = getSwapTokenAmount(msg.sender);
+    uint256 _swapTokenAmount = _getSwapTokenAmount(msg.sender);
+
+    // Update the swap info
+    _swapInfo.hasWithdrawn = true;
 
     // Withdraw the tokens
     if (SWAPPED_TOKEN == address(0)) {
@@ -133,9 +144,6 @@ contract SwapperV1 is ISwapperV1, Ownable, ReentrancyGuard {
     } else {
       IERC20(SWAPPED_TOKEN).safeTransfer(msg.sender, _swapTokenAmount);
     }
-
-    // Update the swap info
-    _swapInfo.hasWithdrawn = true;
 
     // Emit the event
     emit SwappedTokensWithdrawn(msg.sender, _swapTokenAmount);
@@ -165,18 +173,20 @@ contract SwapperV1 is ISwapperV1, Ownable, ReentrancyGuard {
     //////////////////////////////////////////////////////////////*/
 
   /// @inheritdoc ISwapperV1
-  function getSwapTokenAmount(address _user) public view returns (uint256) {
-    if (!swapped) revert SwapperV1_SwapNotExecuted();
-
-    SwapInfo memory _swapInfo = _userToSwapInfo[_user];
-    if (_swapInfo.hasWithdrawn) return 0;
-    /// @dev We can return deposit token amount (as this is a 1:1 swap)
-    return _swapInfo.depositTokenAmount;
+  function getSwapTokenAmount(address _user) public view onlyAfterSwap returns (uint256) {
+    return _getSwapTokenAmount(_user);
   }
 
   /*///////////////////////////////////////////////////////////////
                             Internal Functions
     //////////////////////////////////////////////////////////////*/
+
+  function _getSwapTokenAmount(address _user) internal view returns (uint256) {
+    SwapInfo memory _swapInfo = _userToSwapInfo[_user];
+    if (_swapInfo.hasWithdrawn) return 0;
+    /// @dev We can return deposit token amount (as this is a 1:1 swap)
+    return _swapInfo.depositTokenAmount;
+  }
 
   function _getTokenBalance(address _token) internal view returns (uint256) {
     if (_token == address(0)) {

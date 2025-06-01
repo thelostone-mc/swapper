@@ -123,20 +123,20 @@ interface ISwapperV1 {
   /**
    * @notice The mapping of user to swap info
    */
-  function userToSwapInfo(address _user) external view returns (SwapInfo calldata);
+  function userToSwapInfo(address _user) external view returns (SwapInfo memory);
 
   /*///////////////////////////////////////////////////////////////
                             Logic
   //////////////////////////////////////////////////////////////*/
 
   /**
-   * @notice Allows users to de tokens for swapping
+   * @notice Allows users to deposit tokens for swapping
    * @param _amount The amount of fromToken to deposit
    */
   function deposit(uint256 _amount) external payable;
 
   /**
-   * @notice Executes the swap of all de tokens
+   * @notice Executes the swap of all deposited tokens
    */
   function swap() external payable;
 
