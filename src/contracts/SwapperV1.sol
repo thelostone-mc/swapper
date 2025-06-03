@@ -8,22 +8,22 @@ import {SafeERC20} from '@openzeppelin/token/ERC20/utils/SafeERC20.sol';
 import {ReentrancyGuard} from '@openzeppelin/utils/ReentrancyGuard.sol';
 
 // Internal Imports
-import {ISwapperV1} from 'interfaces/ISwapperV1.sol';
+import {ISwapper} from 'interfaces/ISwapper.sol';
 
-contract SwapperV1 is ISwapperV1, Ownable, ReentrancyGuard {
+contract SwapperV1 is ISwapper, Ownable, ReentrancyGuard {
   using SafeERC20 for IERC20;
 
   /*///////////////////////////////////////////////////////////////
                             Storage
     //////////////////////////////////////////////////////////////*/
 
-  /// @inheritdoc ISwapperV1
+  /// @inheritdoc ISwapper
   address public immutable DEPOSITED_TOKEN;
 
-  /// @inheritdoc ISwapperV1
+  /// @inheritdoc ISwapper
   address public immutable SWAPPED_TOKEN;
 
-  /// @inheritdoc ISwapperV1
+  /// @inheritdoc ISwapper
   bool public swapped;
 
   /// @notice Mapping of user to swap info
@@ -54,7 +54,7 @@ contract SwapperV1 is ISwapperV1, Ownable, ReentrancyGuard {
                             External Functions
     //////////////////////////////////////////////////////////////*/
 
-  /// @inheritdoc ISwapperV1
+  /// @inheritdoc ISwapper
   function deposit(uint256 _amount) external payable onlyBeforeSwap {
     if (_amount == 0) revert SwapperV1_InvalidAmount();
 
@@ -75,7 +75,7 @@ contract SwapperV1 is ISwapperV1, Ownable, ReentrancyGuard {
     emit TokensDeposited(msg.sender, _amount);
   }
 
-  /// @inheritdoc ISwapperV1
+  /// @inheritdoc ISwapper
   function swap() external payable onlyOwner onlyBeforeSwap nonReentrant {
     uint256 _tokenBalance = _getTokenBalance(DEPOSITED_TOKEN);
 
@@ -103,7 +103,7 @@ contract SwapperV1 is ISwapperV1, Ownable, ReentrancyGuard {
     emit TokensSwapped(_tokenBalance, _tokenBalance);
   }
 
-  /// @inheritdoc ISwapperV1
+  /// @inheritdoc ISwapper
   function withdrawDeposit() external onlyBeforeSwap nonReentrant {
     SwapInfo memory _swapInfo = _userToSwapInfo[msg.sender];
 
@@ -125,7 +125,7 @@ contract SwapperV1 is ISwapperV1, Ownable, ReentrancyGuard {
     emit DepositWithdrawn(msg.sender, _withdrawAmount);
   }
 
-  /// @inheritdoc ISwapperV1
+  /// @inheritdoc ISwapper
   function withdraw() external onlyAfterSwap nonReentrant {
     SwapInfo storage _swapInfo = _userToSwapInfo[msg.sender];
 
@@ -149,7 +149,7 @@ contract SwapperV1 is ISwapperV1, Ownable, ReentrancyGuard {
     emit SwappedTokensWithdrawn(msg.sender, _swapTokenAmount);
   }
 
-  /// @inheritdoc ISwapperV1
+  /// @inheritdoc ISwapper
   function emergencyWithdraw(address token, uint256 amount) external onlyOwner {
     if (amount == 0) revert SwapperV1_NoTokensToWithdraw();
 
@@ -163,7 +163,7 @@ contract SwapperV1 is ISwapperV1, Ownable, ReentrancyGuard {
     emit EmergencyWithdraw(msg.sender, token, amount);
   }
 
-  /// @inheritdoc ISwapperV1
+  /// @inheritdoc ISwapper
   function userToSwapInfo(address _user) external view returns (SwapInfo memory) {
     return _userToSwapInfo[_user];
   }
@@ -172,7 +172,7 @@ contract SwapperV1 is ISwapperV1, Ownable, ReentrancyGuard {
                             Public Functions
     //////////////////////////////////////////////////////////////*/
 
-  /// @inheritdoc ISwapperV1
+  /// @inheritdoc ISwapper
   function getSwapTokenAmount(address _user) public view onlyAfterSwap returns (uint256) {
     return _getSwapTokenAmount(_user);
   }

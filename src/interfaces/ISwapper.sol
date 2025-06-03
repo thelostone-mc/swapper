@@ -6,7 +6,7 @@ pragma solidity ^0.8.23;
  * @author thelostone-mc
  * @notice Simple swapper contract to pool, swap and withdraw tokens
  */
-interface ISwapperV1 {
+interface ISwapper {
   /*///////////////////////////////////////////////////////////////
                             Structs
   //////////////////////////////////////////////////////////////*/

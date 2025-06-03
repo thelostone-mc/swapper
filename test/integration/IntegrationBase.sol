@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.23;
 
-import {ISwapperV1, SwapperV1} from 'contracts/SwapperV1.sol';
+import {ISwapper, SwapperV1} from 'contracts/SwapperV1.sol';
 import {Test} from 'forge-std/Test.sol';
 import {IERC20} from 'forge-std/interfaces/IERC20.sol';
 
@@ -16,7 +16,7 @@ contract IntegrationBase is Test {
   address internal _bob = 0xFd546293a729fE1A05D249Ad4F2CA984082F889e;
   address internal _alice = 0xc08a8a9f809107c5A7Be6d90e315e4012c99F39a;
 
-  ISwapperV1 internal _swapper;
+  ISwapper internal _swapper;
 
   function setUp() public {
     vm.createSelectFork(vm.rpcUrl('mainnet'), _FORK_BLOCK);

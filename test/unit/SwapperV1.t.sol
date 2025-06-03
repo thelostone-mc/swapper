@@ -6,7 +6,7 @@ import 'forge-std/console.sol';
 
 import {Ownable} from '@openzeppelin/access/Ownable.sol';
 import {IERC20} from 'forge-std/interfaces/IERC20.sol';
-import {ISwapperV1, SwapperV1} from 'src/contracts/SwapperV1.sol';
+import {ISwapper, SwapperV1} from 'src/contracts/SwapperV1.sol';
 
 import {MockERC20} from 'test/mocks/MockERC20.sol';
 
@@ -51,7 +51,7 @@ contract UnitSwapperV1 is Test {
 
   function test_ConstructorWhenPassingSameTokenForDepositedAndSwapped() public {
     // it reverts
-    vm.expectRevert(ISwapperV1.SwapperV1_InvalidTokens.selector);
+    vm.expectRevert(ISwapper.SwapperV1_InvalidTokens.selector);
     new SwapperV1(address(wunder), address(wunder));
   }
 
@@ -61,13 +61,13 @@ contract UnitSwapperV1 is Test {
 
     // it emits TokensDeposited
     vm.expectEmit(true, true, true, true);
-    emit ISwapperV1.TokensDeposited(_bob, 1e18);
+    emit ISwapper.TokensDeposited(_bob, 1e18);
 
     nativeToERC20Swapper.deposit{value: 1 ether}(1e18);
     vm.stopPrank();
 
     // it deposits the amount to the contract
-    ISwapperV1.SwapInfo memory swapInfo = nativeToERC20Swapper.userToSwapInfo(_bob);
+    ISwapper.SwapInfo memory swapInfo = nativeToERC20Swapper.userToSwapInfo(_bob);
 
     // it updates the deposit token amount
     assertEq(swapInfo.depositTokenAmount, 1e18);
@@ -86,14 +86,14 @@ contract UnitSwapperV1 is Test {
 
     // it emits TokensDeposited
     vm.expectEmit(true, true, true, true);
-    emit ISwapperV1.TokensDeposited(_bob, 1e18);
+    emit ISwapper.TokensDeposited(_bob, 1e18);
 
     // it deposits the amount to the contract
     erc20ToNativeSwapper.deposit(1e18);
 
     vm.stopPrank();
 
-    ISwapperV1.SwapInfo memory swapInfo = erc20ToNativeSwapper.userToSwapInfo(_bob);
+    ISwapper.SwapInfo memory swapInfo = erc20ToNativeSwapper.userToSwapInfo(_bob);
 
     // it updates the deposit token amount
     assertEq(swapInfo.depositTokenAmount, 1e18);
@@ -106,7 +106,7 @@ contract UnitSwapperV1 is Test {
   }
 
   function test_DepositWhenPassingAmountOf0() public {
-    vm.expectRevert(ISwapperV1.SwapperV1_InvalidAmount.selector);
+    vm.expectRevert(ISwapper.SwapperV1_InvalidAmount.selector);
     vm.prank(_bob);
     // it reverts
     nativeToERC20Swapper.deposit{value: 0}(0);
@@ -115,14 +115,14 @@ contract UnitSwapperV1 is Test {
   function test_DepositWhenBalanceOfTheContractIsLessThanTheAmountSent() public {
     vm.deal(_bob, 1 ether);
 
-    vm.expectRevert(ISwapperV1.SwapperV1_AmountMismatch.selector);
+    vm.expectRevert(ISwapper.SwapperV1_AmountMismatch.selector);
     vm.prank(_bob);
     nativeToERC20Swapper.deposit{value: 0.5 ether}(1e18);
   }
 
   function test_DepositWhenBalanceOfTheContractIsGreaterThanTheAmountSent() public {
     vm.deal(_bob, 1 ether);
-    vm.expectRevert(ISwapperV1.SwapperV1_AmountMismatch.selector);
+    vm.expectRevert(ISwapper.SwapperV1_AmountMismatch.selector);
 
     vm.prank(_bob);
     nativeToERC20Swapper.deposit{value: 1 ether}(0.5 ether);
@@ -134,12 +134,12 @@ contract UnitSwapperV1 is Test {
     vm.deal(_bob, 1 ether);
 
     vm.expectEmit(true, true, true, true);
-    emit ISwapperV1.TokensDeposited(_bob, 1e18);
+    emit ISwapper.TokensDeposited(_bob, 1e18);
 
     vm.prank(_bob);
     nativeToERC20Swapper.deposit{value: 1 ether}(1e18);
 
-    ISwapperV1.SwapInfo memory swapInfo = nativeToERC20Swapper.userToSwapInfo(_bob);
+    ISwapper.SwapInfo memory swapInfo = nativeToERC20Swapper.userToSwapInfo(_bob);
 
     assertEq(swapInfo.depositTokenAmount, 2e18);
     assertEq(swapInfo.hasWithdrawn, false);
@@ -151,7 +151,7 @@ contract UnitSwapperV1 is Test {
     test_SwapWhenSwappingToERC20TokensToTheContract();
 
     vm.deal(_bob, 1 ether);
-    vm.expectRevert(ISwapperV1.SwapperV1_SwapAlreadyExecuted.selector);
+    vm.expectRevert(ISwapper.SwapperV1_SwapAlreadyExecuted.selector);
     vm.prank(_bob);
     // it reverts
     nativeToERC20Swapper.deposit{value: 1 ether}(1e18);
@@ -170,7 +170,7 @@ contract UnitSwapperV1 is Test {
 
     // it emits TokensSwapped
     vm.expectEmit(true, true, true, true);
-    emit ISwapperV1.TokensSwapped(1e18, 1e18);
+    emit ISwapper.TokensSwapped(1e18, 1e18);
 
     nativeToERC20Swapper.swap();
     vm.stopPrank();
@@ -193,7 +193,7 @@ contract UnitSwapperV1 is Test {
     vm.deal(_owner, 1 ether);
 
     vm.expectEmit(true, true, true, true);
-    emit ISwapperV1.TokensSwapped(1e18, 1e18);
+    emit ISwapper.TokensSwapped(1e18, 1e18);
 
     vm.prank(_owner);
     erc20ToNativeSwapper.swap{value: 1 ether}();
@@ -220,7 +220,7 @@ contract UnitSwapperV1 is Test {
 
   function test_SwapWhenPassingAmountOf0() public {
     test_DepositWhenPassingValidErc20TokenAmount();
-    vm.expectRevert(ISwapperV1.SwapperV1_NotEnoughLiquidity.selector);
+    vm.expectRevert(ISwapper.SwapperV1_NotEnoughLiquidity.selector);
     vm.deal(_owner, 1 ether);
     vm.prank(_owner);
     // it reverts
@@ -229,7 +229,7 @@ contract UnitSwapperV1 is Test {
 
   function test_SwapWhenCalledAfterSwap() public {
     test_SwapWhenSwappingToERC20TokensToTheContract();
-    vm.expectRevert(ISwapperV1.SwapperV1_SwapAlreadyExecuted.selector);
+    vm.expectRevert(ISwapper.SwapperV1_SwapAlreadyExecuted.selector);
     vm.prank(_owner);
     // it reverts
     nativeToERC20Swapper.swap();
@@ -247,7 +247,7 @@ contract UnitSwapperV1 is Test {
 
     // it emits SwappedTokensWithdrawn
     vm.expectEmit(true, true, true, true);
-    emit ISwapperV1.SwappedTokensWithdrawn(address(_bob), 1e18);
+    emit ISwapper.SwappedTokensWithdrawn(address(_bob), 1e18);
 
     vm.startPrank(_bob);
 
@@ -259,7 +259,7 @@ contract UnitSwapperV1 is Test {
     assertEq(address(erc20ToNativeSwapper).balance, 0);
 
     // it updates the hasWithdrawn flag
-    ISwapperV1.SwapInfo memory swapInfo = erc20ToNativeSwapper.userToSwapInfo(_bob);
+    ISwapper.SwapInfo memory swapInfo = erc20ToNativeSwapper.userToSwapInfo(_bob);
     assertEq(swapInfo.hasWithdrawn, true);
   }
 
@@ -268,7 +268,7 @@ contract UnitSwapperV1 is Test {
 
     // it emits SwappedTokensWithdrawn
     vm.expectEmit(true, true, true, true);
-    emit ISwapperV1.SwappedTokensWithdrawn(address(_bob), 1e18);
+    emit ISwapper.SwappedTokensWithdrawn(address(_bob), 1e18);
 
     vm.startPrank(_bob);
     nativeToERC20Swapper.withdraw();
@@ -279,14 +279,14 @@ contract UnitSwapperV1 is Test {
     assertEq(wunder.balanceOf(address(nativeToERC20Swapper)), 0);
 
     // it updates the hasWithdrawn flag
-    ISwapperV1.SwapInfo memory swapInfo = nativeToERC20Swapper.userToSwapInfo(_bob);
+    ISwapper.SwapInfo memory swapInfo = nativeToERC20Swapper.userToSwapInfo(_bob);
     assertEq(swapInfo.hasWithdrawn, true);
   }
 
   function test_WithdrawWhenNoTokensToWithdraw() public {
     test_SwapWhenSwappingToERC20TokensToTheContract();
 
-    vm.expectRevert(ISwapperV1.SwapperV1_NoTokensToWithdraw.selector);
+    vm.expectRevert(ISwapper.SwapperV1_NoTokensToWithdraw.selector);
     vm.prank(makeAddr('user'));
     // it reverts
     nativeToERC20Swapper.withdraw();
@@ -297,7 +297,7 @@ contract UnitSwapperV1 is Test {
     vm.startPrank(_bob);
     erc20ToNativeSwapper.withdraw();
 
-    vm.expectRevert(ISwapperV1.SwapperV1_AlreadyWithdrawn.selector);
+    vm.expectRevert(ISwapper.SwapperV1_AlreadyWithdrawn.selector);
     // it reverts
     erc20ToNativeSwapper.withdraw();
 
@@ -306,7 +306,7 @@ contract UnitSwapperV1 is Test {
 
   function test_WithdrawWhenCalledBeforeSwap() public {
     test_DepositWhenPassingValidNativeTokenAmount();
-    vm.expectRevert(ISwapperV1.SwapperV1_SwapNotExecuted.selector);
+    vm.expectRevert(ISwapper.SwapperV1_SwapNotExecuted.selector);
     vm.prank(_bob);
     // it reverts
     nativeToERC20Swapper.withdraw();
@@ -317,7 +317,7 @@ contract UnitSwapperV1 is Test {
 
     // it emits DepositWithdrawn
     vm.expectEmit(true, true, true, true);
-    emit ISwapperV1.DepositWithdrawn(address(_bob), 1e18);
+    emit ISwapper.DepositWithdrawn(address(_bob), 1e18);
 
     vm.prank(_bob);
     nativeToERC20Swapper.withdrawDeposit();
@@ -327,13 +327,13 @@ contract UnitSwapperV1 is Test {
     assertEq(_bob.balance, 1e18);
 
     // it deletes the swap info
-    ISwapperV1.SwapInfo memory swapInfo = nativeToERC20Swapper.userToSwapInfo(_bob);
+    ISwapper.SwapInfo memory swapInfo = nativeToERC20Swapper.userToSwapInfo(_bob);
     assertEq(swapInfo.depositTokenAmount, 0);
     assertEq(swapInfo.hasWithdrawn, false);
   }
 
   function test_WithdrawDepositWhenNoTokensToWithdraw() public {
-    vm.expectRevert(ISwapperV1.SwapperV1_NoTokensToWithdraw.selector);
+    vm.expectRevert(ISwapper.SwapperV1_NoTokensToWithdraw.selector);
     vm.prank(_bob);
     // it reverts
     nativeToERC20Swapper.withdrawDeposit();
@@ -341,7 +341,7 @@ contract UnitSwapperV1 is Test {
 
   function test_WithdrawDepositWhenCalledAfterSwap() public {
     test_SwapWhenSwappingToERC20TokensToTheContract();
-    vm.expectRevert(ISwapperV1.SwapperV1_SwapAlreadyExecuted.selector);
+    vm.expectRevert(ISwapper.SwapperV1_SwapAlreadyExecuted.selector);
     vm.prank(_bob);
     // it reverts
     nativeToERC20Swapper.withdrawDeposit();
@@ -352,7 +352,7 @@ contract UnitSwapperV1 is Test {
     vm.deal(address(nativeToERC20Swapper), 1 ether);
 
     vm.expectEmit(true, true, true, true);
-    emit ISwapperV1.EmergencyWithdraw(_owner, address(0), 1 ether);
+    emit ISwapper.EmergencyWithdraw(_owner, address(0), 1 ether);
 
     vm.prank(_owner);
     // it emits EmergencyWithdraw
@@ -364,7 +364,7 @@ contract UnitSwapperV1 is Test {
   }
 
   function test_EmergencyWithdrawWhenPassingAmountOf0() public {
-    vm.expectRevert(ISwapperV1.SwapperV1_NoTokensToWithdraw.selector);
+    vm.expectRevert(ISwapper.SwapperV1_NoTokensToWithdraw.selector);
     vm.prank(_owner);
     // it reverts
     nativeToERC20Swapper.emergencyWithdraw(address(0), 0);
@@ -379,7 +379,7 @@ contract UnitSwapperV1 is Test {
 
   function test_EmergencyWithdrawWhenPassingAmountGreaterThanTheBalance() public {
     vm.deal(address(nativeToERC20Swapper), 1 ether);
-    vm.expectRevert(ISwapperV1.SwapperV1_NotEnoughLiquidity.selector);
+    vm.expectRevert(ISwapper.SwapperV1_NotEnoughLiquidity.selector);
     vm.prank(_owner);
     // it reverts
     nativeToERC20Swapper.emergencyWithdraw(address(0), 2 ether);
