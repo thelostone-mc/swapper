@@ -30,12 +30,12 @@ contract SwapperV1 is ISwapper, Ownable, ReentrancyGuard {
   mapping(address user => SwapInfo swapInfo) private _userToSwapInfo;
 
   modifier onlyBeforeSwap() {
-    if (swapped) revert SwapperV1_SwapAlreadyExecuted();
+    if (swapped) revert Swapper_SwapAlreadyExecuted();
     _;
   }
 
   modifier onlyAfterSwap() {
-    if (!swapped) revert SwapperV1_SwapNotExecuted();
+    if (!swapped) revert Swapper_SwapNotExecuted();
     _;
   }
 
@@ -44,7 +44,7 @@ contract SwapperV1 is ISwapper, Ownable, ReentrancyGuard {
     //////////////////////////////////////////////////////////////*/
 
   constructor(address _depositedToken, address _swappedToken) Ownable(msg.sender) {
-    if (_depositedToken == _swappedToken) revert SwapperV1_InvalidTokens();
+    if (_depositedToken == _swappedToken) revert Swapper_InvalidTokens();
 
     DEPOSITED_TOKEN = _depositedToken;
     SWAPPED_TOKEN = _swappedToken;
@@ -56,15 +56,15 @@ contract SwapperV1 is ISwapper, Ownable, ReentrancyGuard {
 
   /// @inheritdoc ISwapper
   function deposit(uint256 _amount) external payable onlyBeforeSwap {
-    if (_amount == 0) revert SwapperV1_InvalidAmount();
+    if (_amount == 0) revert Swapper_InvalidAmount();
 
     SwapInfo storage _swapInfo = _userToSwapInfo[msg.sender];
 
     // Ensure funds are deposited to the swapper contract
     if (DEPOSITED_TOKEN == address(0)) {
-      if (msg.value != _amount) revert SwapperV1_AmountMismatch();
+      if (msg.value != _amount) revert Swapper_AmountMismatch();
     } else {
-      if (msg.value != 0) revert SwapperV1_AmountMismatch();
+      if (msg.value != 0) revert Swapper_AmountMismatch();
       // TODO: Can add IERC20Permit but not needed for now
       IERC20(DEPOSITED_TOKEN).safeTransferFrom(msg.sender, address(this), _amount);
     }
@@ -86,7 +86,7 @@ contract SwapperV1 is ISwapper, Ownable, ReentrancyGuard {
 
     // Expect liquidity to be equal to the deposited token balance (1:1 swap)
     if (_tokenBalance != _getTokenBalance(SWAPPED_TOKEN)) {
-      revert SwapperV1_NotEnoughLiquidity();
+      revert Swapper_NotEnoughLiquidity();
     }
 
     // Set the swapped flag to true
@@ -109,7 +109,7 @@ contract SwapperV1 is ISwapper, Ownable, ReentrancyGuard {
 
     uint256 _withdrawAmount = _swapInfo.depositTokenAmount;
 
-    if (_withdrawAmount == 0) revert SwapperV1_NoTokensToWithdraw();
+    if (_withdrawAmount == 0) revert Swapper_NoTokensToWithdraw();
 
     // Delete the swap
     delete _userToSwapInfo[msg.sender];
@@ -129,9 +129,9 @@ contract SwapperV1 is ISwapper, Ownable, ReentrancyGuard {
   function withdraw() external onlyAfterSwap nonReentrant {
     SwapInfo storage _swapInfo = _userToSwapInfo[msg.sender];
 
-    if (_swapInfo.hasWithdrawn) revert SwapperV1_AlreadyWithdrawn();
+    if (_swapInfo.hasWithdrawn) revert Swapper_AlreadyWithdrawn();
 
-    if (_swapInfo.depositTokenAmount == 0) revert SwapperV1_NoTokensToWithdraw();
+    if (_swapInfo.depositTokenAmount == 0) revert Swapper_NoTokensToWithdraw();
 
     uint256 _swapTokenAmount = _getSwapTokenAmount(msg.sender);
 
@@ -151,9 +151,9 @@ contract SwapperV1 is ISwapper, Ownable, ReentrancyGuard {
 
   /// @inheritdoc ISwapper
   function emergencyWithdraw(address token, uint256 amount) external onlyOwner {
-    if (amount == 0) revert SwapperV1_NoTokensToWithdraw();
+    if (amount == 0) revert Swapper_NoTokensToWithdraw();
 
-    if (_getTokenBalance(token) < amount) revert SwapperV1_NotEnoughLiquidity();
+    if (_getTokenBalance(token) < amount) revert Swapper_NotEnoughLiquidity();
 
     if (token == address(0)) {
       payable(msg.sender).transfer(amount);

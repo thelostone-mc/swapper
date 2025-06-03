@@ -6,17 +6,26 @@ pragma solidity ^0.8.23;
  * @author thelostone-mc
  * @notice Simple swapper contract to pool, swap and withdraw tokens
  */
-interface ISwapper {
-  /*///////////////////////////////////////////////////////////////
-                            Structs
-  //////////////////////////////////////////////////////////////*/
+interface ISwapperV2 {
 
-  /// @notice Struct of user
-  struct SwapInfo {
-    /// @notice Amount of tokens deposited
-    uint256 depositTokenAmount;
-    /// @notice Has the user withdrawn their tokens
-    bool hasWithdrawn;
+  /**
+   * @notice Struct to track deposit information
+   * @param amount The amount of tokens deposited
+   * @param swapIndex The index of the swap this deposit is for
+   */
+  struct Deposits {
+    uint256 amount;
+    uint256 swapIndex;
+  }
+
+  /**
+   * @notice Struct to track swap rate information
+   * @param totalDeposited The total amount of tokens deposited
+   * @param totalSwapped The total amount of tokens swapped
+   */
+  struct SwapRateInfo {
+    uint256 totalDeposited;
+    uint256 totalSwapped;
   }
 
   /*///////////////////////////////////////////////////////////////
@@ -115,15 +124,6 @@ interface ISwapper {
    */
   function SWAPPED_TOKEN() external view returns (address);
 
-  /**
-   * @notice Whether the swap has been executed
-   */
-  function swapped() external view returns (bool);
-
-  /**
-   * @notice The mapping of user to swap info
-   */
-  function userToSwapInfo(address _user) external view returns (SwapInfo memory);
 
   /*///////////////////////////////////////////////////////////////
                             Logic

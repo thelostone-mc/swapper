@@ -51,7 +51,7 @@ contract UnitSwapperV1 is Test {
 
   function test_ConstructorWhenPassingSameTokenForDepositedAndSwapped() public {
     // it reverts
-    vm.expectRevert(ISwapper.SwapperV1_InvalidTokens.selector);
+    vm.expectRevert(ISwapper.Swapper_InvalidTokens.selector);
     new SwapperV1(address(wunder), address(wunder));
   }
 
@@ -106,7 +106,7 @@ contract UnitSwapperV1 is Test {
   }
 
   function test_DepositWhenPassingAmountOf0() public {
-    vm.expectRevert(ISwapper.SwapperV1_InvalidAmount.selector);
+    vm.expectRevert(ISwapper.Swapper_InvalidAmount.selector);
     vm.prank(_bob);
     // it reverts
     nativeToERC20Swapper.deposit{value: 0}(0);
@@ -115,14 +115,14 @@ contract UnitSwapperV1 is Test {
   function test_DepositWhenBalanceOfTheContractIsLessThanTheAmountSent() public {
     vm.deal(_bob, 1 ether);
 
-    vm.expectRevert(ISwapper.SwapperV1_AmountMismatch.selector);
+    vm.expectRevert(ISwapper.Swapper_AmountMismatch.selector);
     vm.prank(_bob);
     nativeToERC20Swapper.deposit{value: 0.5 ether}(1e18);
   }
 
   function test_DepositWhenBalanceOfTheContractIsGreaterThanTheAmountSent() public {
     vm.deal(_bob, 1 ether);
-    vm.expectRevert(ISwapper.SwapperV1_AmountMismatch.selector);
+    vm.expectRevert(ISwapper.Swapper_AmountMismatch.selector);
 
     vm.prank(_bob);
     nativeToERC20Swapper.deposit{value: 1 ether}(0.5 ether);
@@ -151,7 +151,7 @@ contract UnitSwapperV1 is Test {
     test_SwapWhenSwappingToERC20TokensToTheContract();
 
     vm.deal(_bob, 1 ether);
-    vm.expectRevert(ISwapper.SwapperV1_SwapAlreadyExecuted.selector);
+    vm.expectRevert(ISwapper.Swapper_SwapAlreadyExecuted.selector);
     vm.prank(_bob);
     // it reverts
     nativeToERC20Swapper.deposit{value: 1 ether}(1e18);
@@ -220,7 +220,7 @@ contract UnitSwapperV1 is Test {
 
   function test_SwapWhenPassingAmountOf0() public {
     test_DepositWhenPassingValidErc20TokenAmount();
-    vm.expectRevert(ISwapper.SwapperV1_NotEnoughLiquidity.selector);
+    vm.expectRevert(ISwapper.Swapper_NotEnoughLiquidity.selector);
     vm.deal(_owner, 1 ether);
     vm.prank(_owner);
     // it reverts
@@ -229,7 +229,7 @@ contract UnitSwapperV1 is Test {
 
   function test_SwapWhenCalledAfterSwap() public {
     test_SwapWhenSwappingToERC20TokensToTheContract();
-    vm.expectRevert(ISwapper.SwapperV1_SwapAlreadyExecuted.selector);
+    vm.expectRevert(ISwapper.Swapper_SwapAlreadyExecuted.selector);
     vm.prank(_owner);
     // it reverts
     nativeToERC20Swapper.swap();
@@ -286,7 +286,7 @@ contract UnitSwapperV1 is Test {
   function test_WithdrawWhenNoTokensToWithdraw() public {
     test_SwapWhenSwappingToERC20TokensToTheContract();
 
-    vm.expectRevert(ISwapper.SwapperV1_NoTokensToWithdraw.selector);
+    vm.expectRevert(ISwapper.Swapper_NoTokensToWithdraw.selector);
     vm.prank(makeAddr('user'));
     // it reverts
     nativeToERC20Swapper.withdraw();
@@ -297,7 +297,7 @@ contract UnitSwapperV1 is Test {
     vm.startPrank(_bob);
     erc20ToNativeSwapper.withdraw();
 
-    vm.expectRevert(ISwapper.SwapperV1_AlreadyWithdrawn.selector);
+    vm.expectRevert(ISwapper.Swapper_AlreadyWithdrawn.selector);
     // it reverts
     erc20ToNativeSwapper.withdraw();
 
@@ -306,7 +306,7 @@ contract UnitSwapperV1 is Test {
 
   function test_WithdrawWhenCalledBeforeSwap() public {
     test_DepositWhenPassingValidNativeTokenAmount();
-    vm.expectRevert(ISwapper.SwapperV1_SwapNotExecuted.selector);
+    vm.expectRevert(ISwapper.Swapper_SwapNotExecuted.selector);
     vm.prank(_bob);
     // it reverts
     nativeToERC20Swapper.withdraw();
@@ -333,7 +333,7 @@ contract UnitSwapperV1 is Test {
   }
 
   function test_WithdrawDepositWhenNoTokensToWithdraw() public {
-    vm.expectRevert(ISwapper.SwapperV1_NoTokensToWithdraw.selector);
+    vm.expectRevert(ISwapper.Swapper_NoTokensToWithdraw.selector);
     vm.prank(_bob);
     // it reverts
     nativeToERC20Swapper.withdrawDeposit();
@@ -341,7 +341,7 @@ contract UnitSwapperV1 is Test {
 
   function test_WithdrawDepositWhenCalledAfterSwap() public {
     test_SwapWhenSwappingToERC20TokensToTheContract();
-    vm.expectRevert(ISwapper.SwapperV1_SwapAlreadyExecuted.selector);
+    vm.expectRevert(ISwapper.Swapper_SwapAlreadyExecuted.selector);
     vm.prank(_bob);
     // it reverts
     nativeToERC20Swapper.withdrawDeposit();
@@ -364,7 +364,7 @@ contract UnitSwapperV1 is Test {
   }
 
   function test_EmergencyWithdrawWhenPassingAmountOf0() public {
-    vm.expectRevert(ISwapper.SwapperV1_NoTokensToWithdraw.selector);
+    vm.expectRevert(ISwapper.Swapper_NoTokensToWithdraw.selector);
     vm.prank(_owner);
     // it reverts
     nativeToERC20Swapper.emergencyWithdraw(address(0), 0);
@@ -379,7 +379,7 @@ contract UnitSwapperV1 is Test {
 
   function test_EmergencyWithdrawWhenPassingAmountGreaterThanTheBalance() public {
     vm.deal(address(nativeToERC20Swapper), 1 ether);
-    vm.expectRevert(ISwapper.SwapperV1_NotEnoughLiquidity.selector);
+    vm.expectRevert(ISwapper.Swapper_NotEnoughLiquidity.selector);
     vm.prank(_owner);
     // it reverts
     nativeToERC20Swapper.emergencyWithdraw(address(0), 2 ether);
