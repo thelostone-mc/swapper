@@ -124,18 +124,24 @@ contract SwapperV2 is ISwapperV2, Ownable, ReentrancyGuard {
 
   /// @inheritdoc ISwapperV2
   function withdrawDeposit() external nonReentrant {
-    Deposits[] memory _deposits = _userDeposits[msg.sender];
-    uint256 _totalDeposits = _deposits.length;
+    Deposits[] storage _deposits = _userDeposits[msg.sender];
     uint256 _withdrawableAmount = 0;
 
-    for (uint256 i = 0; i < _totalDeposits; i++) {
-      _withdrawableAmount += _deposits[i].amount;
+    uint256 i = 0;
+    while (i < _deposits.length) {
+      if (_deposits[i].swapIndex >= _swapIndex) {
+        _withdrawableAmount += _deposits[i].amount;
+
+        // Remove the element by swapping with the last and popping
+        _deposits[i] = _deposits[_deposits.length - 1];
+        _deposits.pop();
+        // Do not increment i since the new item at i needs to be checked
+      } else {
+          i++;
+      }
     }
 
     if (_withdrawableAmount == 0) revert Swapper_NoTokensToWithdraw();
-
-    // Delete the deposits for the user
-    delete _userDeposits[msg.sender];
 
     // Withdraw the tokens
     if (DEPOSITED_TOKEN == address(0)) {

@@ -37,7 +37,7 @@ SwapperV2::withdrawDeposit
 ├── when no tokens to withdraw
 │   └── it reverts
 ├── when called after swap for deposits already swapped
-│   └── it does not withdraw swapped deposits (only pre-swap deposits)
+│   └── it reverts
 └── when user has both pre-swap and post-swap deposits
     ├── it only withdraws pre-swap deposits
     └── it leaves post-swap deposits for future swaps

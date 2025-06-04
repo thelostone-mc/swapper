@@ -7,8 +7,8 @@ import {CommonBase} from 'forge-std/Base.sol';
 import {MockERC20} from 'test/mocks/MockERC20.sol';
 
 contract SwapperSetup is CommonBase {
-  SwapperV1 internal _Erc20ToErc20targetContract;
-  SwapperV1 internal _Erc20ToNativeTargetContract;
+  SwapperV1 internal _erc20ToErc20TargetContract;
+  SwapperV1 internal _erc20ToNativeTargetContract;
   MockERC20 internal _wunder;
   MockERC20 internal _kinder;
 
@@ -18,7 +18,7 @@ contract SwapperSetup is CommonBase {
     _kinder = new MockERC20();
     _kinder.initialize('KINDER', 'KIN', 18);
 
-    _Erc20ToErc20targetContract = new SwapperV1(address(_wunder), address(_kinder));
-    _Erc20ToNativeTargetContract = new SwapperV1(address(_wunder), address(0));
+    _erc20ToErc20TargetContract = new SwapperV1(address(_wunder), address(_kinder));
+    _erc20ToNativeTargetContract = new SwapperV1(address(_wunder), address(0));
   }
 }

@@ -7,4 +7,8 @@ contract MockERC20 is ForgeMockERC20 {
   function mint(address to, uint256 amount) external {
     _mint(to, amount);
   }
+
+  function burnFrom(address from, uint256 amount) external {
+    _burn(from, amount);
+  }
 }

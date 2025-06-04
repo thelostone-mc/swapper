@@ -33,6 +33,7 @@
     "package.json": "sort-package-json"
   },
   "dependencies": {
+    "@defi-wonderland/smock-foundry": "^1.5.0",
     "@openzeppelin/contracts": "^5.3.0",
     "@uniswap/v2-periphery": "^1.1.0-beta.0"
   },
