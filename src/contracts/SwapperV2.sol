@@ -33,9 +33,6 @@ contract SwapperV2 is ISwapperV2, Ownable, ReentrancyGuard {
   /// @notice Mapping of user to thier deposited by swap index
   mapping(address user => Deposits[] deposits) private _userDeposits;
 
-  /// @notice Mapping of user to withdrawable balance
-  mapping(address user => uint256 amount) private _userWithdrawableBalance;
-
   /// @notice Mapping of swap index to the swap rate
   mapping(uint256 swapIndex => SwapRateInfo swapRateInfo) private _swaps;
 
@@ -84,18 +81,18 @@ contract SwapperV2 is ISwapperV2, Ownable, ReentrancyGuard {
     address[] memory path = _constructTokenPath();
 
     uint256 _totalDeposited = _getTokenBalance(DEPOSITED_TOKEN);
-    uint256 _totalBalanceBeforeSwapping = _getTokenBalance(SWAPPED_TOKEN);
+    uint256[] memory amounts;
 
     if (DEPOSITED_TOKEN == address(0)) {
       // swapping ETH -> token
-      ROUTER.swapExactETHForTokens{value: _totalDeposited}(0, path, address(this), block.timestamp);
+      amounts = ROUTER.swapExactETHForTokens{value: _totalDeposited}(0, path, address(this), block.timestamp);
     } else {
       // Approve the router to spend the deposited tokens
       IERC20(DEPOSITED_TOKEN).approve(address(ROUTER), _totalDeposited);
 
       if (SWAPPED_TOKEN == address(0)) {
         // Swapping token -> ETH
-        ROUTER.swapExactTokensForETH(
+        amounts = ROUTER.swapExactTokensForETH(
           _totalDeposited,
           0, // Note: min amount out should be passed in as arg
           path,
@@ -104,7 +101,7 @@ contract SwapperV2 is ISwapperV2, Ownable, ReentrancyGuard {
         );
       } else {
         // Swapping token -> token
-        ROUTER.swapExactTokensForTokens(
+        amounts = ROUTER.swapExactTokensForTokens(
           _totalDeposited,
           0, // Note: min amount out should be passed in as arg
           path,
@@ -114,7 +111,7 @@ contract SwapperV2 is ISwapperV2, Ownable, ReentrancyGuard {
       }
     }
 
-    uint256 _totalSwapped = _getTokenBalance(SWAPPED_TOKEN) - _totalBalanceBeforeSwapping;
+    uint256 _totalSwapped = amounts[1];
 
     // Store the swap rate information
     _swaps[_swapIndex] = SwapRateInfo({totalDeposited: _totalDeposited, totalSwapped: _totalSwapped});
@@ -195,6 +192,21 @@ contract SwapperV2 is ISwapperV2, Ownable, ReentrancyGuard {
   /// @inheritdoc ISwapperV2
   function getSwapTokenAmount(address _user) public view returns (uint256) {
     return _getSwapTokenAmount(_user);
+  }
+
+  /// @inheritdoc ISwapperV2
+  function getSwapIndex() public view returns (uint256) {
+    return _swapIndex;
+  }
+
+  /// @inheritdoc ISwapperV2
+  function getSwapRateInfo(uint256 _index) public view returns (SwapRateInfo memory) {
+    return _swaps[_index];
+  }
+
+  /// @inheritdoc ISwapperV2
+  function getDeposits(address _user) public view returns (Deposits[] memory) {
+    return _userDeposits[_user];
   }
 
   /*///////////////////////////////////////////////////////////////

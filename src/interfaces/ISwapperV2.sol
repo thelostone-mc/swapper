@@ -1,13 +1,14 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.23;
 
+import {IUniswapV2Router02} from '@uniswap/v2-periphery/interfaces/IUniswapV2Router02.sol';
+
 /**
  * @title Swapper Contract
  * @author thelostone-mc
  * @notice Simple swapper contract to pool, swap and withdraw tokens
  */
 interface ISwapperV2 {
-
   /**
    * @notice Struct to track deposit information
    * @param amount The amount of tokens deposited
@@ -124,6 +125,15 @@ interface ISwapperV2 {
    */
   function SWAPPED_TOKEN() external view returns (address);
 
+  /**
+   * @notice The router to be used for swapping
+   */
+  function ROUTER() external view returns (IUniswapV2Router02);
+
+  /**
+   * @notice The index of the current swap
+   */
+  function getSwapIndex() external view returns (uint256);
 
   /*///////////////////////////////////////////////////////////////
                             Logic
@@ -156,6 +166,20 @@ interface ISwapperV2 {
    * @return The amount of tokens the user is entitled to
    */
   function getSwapTokenAmount(address _user) external view returns (uint256);
+
+  /**
+   * @notice The swap rate info for a given swap index
+   * @param _index The index of the swap
+   * @return The swap rate info
+   */
+  function getSwapRateInfo(uint256 _index) external view returns (SwapRateInfo memory);
+
+  /**
+   * @notice The deposits for a given user
+   * @param _user The address of the user
+   * @return The deposits
+   */
+  function getDeposits(address _user) external view returns (Deposits[] memory);
 
   /**
    * @notice Emergency withdraw function to withdraw tokens from the contract

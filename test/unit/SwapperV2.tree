@@ -1,0 +1,102 @@
+SwapperV2::constructor
+├── when passing valid tokens
+│   ├── it deploys
+│   ├── it sets the deposited token
+│   ├── it sets the swapped token
+│   └── it sets the router
+└── when passing same token for deposited and swapped
+    └── it reverts
+
+SwapperV2::deposit
+├── when passing valid native token amount
+│   ├── it deposits the amount to the contract
+│   ├── it appends a deposit entry for the user
+│   ├── it updates the balance of the contract
+│   └── it emits TokensDeposited
+├── when passing valid ERC20 token amount
+│   ├── it deposits the amount to the contract
+│   ├── it appends a deposit entry for the user
+│   ├── it updates the balance of the contract
+│   └── it emits TokensDeposited
+├── when depositing more than once
+│   ├── it appends multiple deposit entries for the user
+│   ├── it updates the balance of the contract
+│   └── it emits TokensDeposited for each deposit
+├── when passing amount of 0
+│   └── it reverts
+├── when balance of the contract is less than the amount sent
+│   └── it reverts
+└── when balance of the contract is greater than the amount sent
+    └── it reverts
+
+SwapperV2::withdrawDeposit
+├── when withdrawing before any swap
+│   ├── it returns the deposit token amount to the user
+│   ├── it deletes the user's deposit entries
+│   └── it emits DepositWithdrawn
+├── when no tokens to withdraw
+│   └── it reverts
+├── when called after swap for deposits already swapped
+│   └── it does not withdraw swapped deposits (only pre-swap deposits)
+└── when user has both pre-swap and post-swap deposits
+    ├── it only withdraws pre-swap deposits
+    └── it leaves post-swap deposits for future swaps
+
+SwapperV2::swap
+├── when swapping native to ERC20 tokens to the contract
+│   ├── it swaps via Uniswap V2 router
+│   ├── it records the swap rate for the round
+│   ├── it increments the swap index
+│   └── it emits TokensSwapped
+├── when swapping ERC20 to native token to the contract
+│   ├── it swaps via Uniswap V2 router
+│   ├── it records the swap rate for the round
+│   ├── it increments the swap index
+│   └── it emits TokensSwapped
+├── when swapping ERC20 to ERC20 tokens to the contract
+│   ├── it swaps via Uniswap V2 router
+│   ├── it records the swap rate for the round
+│   ├── it increments the swap index
+│   └── it emits TokensSwapped
+└──when called by a non-owner
+    └── it reverts
+
+SwapperV2::withdraw
+├── when withdrawing after a swap
+│   ├── it transfers the correct share of swapped tokens to the user
+│   ├── it deletes the user's deposit entries for swapped rounds
+│   └── it emits SwappedTokensWithdrawn
+├── when user has deposits from multiple rounds
+│   ├── it calculates and transfers the sum of all eligible swapped tokens
+│   └── it deletes all user's deposit entries
+├── when no tokens to withdraw
+│   └── it reverts
+└── when called before any swap
+    └── it reverts or returns 0
+
+SwapperV2::getSwapTokenAmount
+├── when called after a swap
+│   ├── it returns the correct withdrawable amount for the user
+│   └── it returns 0 if user has no deposits
+└──when called before any swap
+    └── it returns 0
+
+SwapperV2::emergencyWithdraw
+├── when withdrawing
+│   ├── it transfers the tokens to the owner
+│   └── it emits EmergencyWithdraw
+├── when passing amount of 0
+│   └── it reverts
+├── when called by a non-owner
+│   └── it reverts
+└── when passing amount greater than the balance
+    └── it reverts
+
+SwapperV2::swap
+├── when users deposits and swaps and withdraws and deposits again
+│   ├── it tracks deposits and swaps per round
+│   ├── it allows users to participate in multiple rounds
+│   └── it calculates correct withdrawable amounts for each round
+└── when some users withdraw before swap and others after
+    ├── it only includes active deposits in the swap
+    └── it does not double-count or lose user funds

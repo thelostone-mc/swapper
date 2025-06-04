@@ -21,7 +21,6 @@ contract UnitSwapperV1 is Test {
   address internal _owner = makeAddr('_owner');
   address internal _bob = makeAddr('_bob');
   address internal _alice = makeAddr('_alice');
-  address internal _whale = makeAddr('_whale');
 
   function setUp() public {
     vm.startPrank(_owner);
