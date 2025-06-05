@@ -1,0 +1,93 @@
+SwapperV1::constructor
+├── when passing valid tokens
+│   ├── it deploys
+│   ├── it sets the deposited token
+│   └── it sets the swapped token
+└── when passing same token for deposited and swapped
+    └── it reverts
+
+SwapperV1::deposit
+├── when passing valid native token amount
+│   ├── it deposits the amount to the contract
+│   ├── it updates the deposit token amount
+│   ├── it sets the hasWithdrawn flag to false
+│   ├── it updates the balance of the contract
+│   └── it emits TokensDeposited
+├── when passing valid erc20 token amount
+│   ├── it deposits the amount to the contract
+│   ├── it updates the deposit token amount
+│   ├── it sets the hasWithdrawn flag to false
+│   ├── it updates the balance of the contract
+│   └── it emits TokensDeposited
+├── when depositing more than once
+│   ├── it deposits the amount to the contract
+│   ├── it updates the deposit token amount
+│   ├── it does not change the hasWithdrawn flag
+│   ├── it updates the balance of the contract
+│   └── it emits TokensDeposited
+├── when passing amount of 0
+│   └── it reverts
+├── when balance of the contract is less than the amount sent
+│   └── it reverts
+├── when balance of the contract is greater than the amount sent
+│   └── it reverts
+└── when called after swap
+    └── it reverts
+
+SwapperV1::swap
+├── when swapping native to ERC20 tokens to the contract
+│   ├── it transfers the native token to the contract
+│   ├── it transfers the ERC20 tokens to the owner
+│   ├── it sets the swapped flag to true
+│   └── it emits TokensSwapped
+├── when swapping ERC20 to native token to the contract
+│   ├── it transfers the ERC20 tokens to the contract
+│   ├── it transfers the native token to the owner
+│   ├── it sets the swapped flag to true
+│   └── it emits TokensSwapped
+├── when transferring insufficient tokens to the contract
+│   └── it reverts
+├── when passing amount of 0
+│   └── it reverts
+├── when called after swap
+│   └── it reverts
+└── when called by a non-owner
+    └── it reverts
+
+SwapperV1::withdraw
+├── when withdrawing native token
+│   ├── it transfers the tokens to the user
+│   ├── it updates the hasWithdrawn flag
+│   └── it emits SwappedTokensWithdrawn
+├── when withdrawing ERC20 token
+│   ├── it transfers the tokens to the user
+│   ├── it updates the hasWithdrawn flag
+│   └── it emits SwappedTokensWithdrawn
+├── when no tokens to withdraw
+│   └── it reverts
+├── when already withdrawn
+│   └── it reverts
+└── when called before swap
+    └── it reverts
+
+SwapperV1::withdrawDeposit
+├── when withdrawing
+│   ├── it returns the deposit token amount to the user
+│   ├── it deletes the swap info
+│   └── it emits DepositWithdrawn
+├── when no tokens to withdraw
+│   └── it reverts
+└── when called after swap
+    └── it reverts
+
+
+SwapperV1::emergencyWithdraw
+├── when withdrawing
+│   ├── it transfers the tokens to the user
+│   └── it emits EmergencyWithdraw
+├── when passing amount of 0
+│   └── it reverts
+├── when called by a non-owner
+│   └── it reverts
+└── when passing amount greater than the balance
+    └── it reverts

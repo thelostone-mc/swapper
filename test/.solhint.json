@@ -5,12 +5,16 @@
       {
         "ignorePublicFunctions":true,
         "ignoreExternalFunctions":true,
-        "ignoreContracts":true
+        "ignoreContracts":true,
+        "ignoreImports":true
       }
     ],
     "no-global-import": "off",
     "max-states-count": "off",
     "ordering": "off",
-    "one-contract-per-file": "off"
+    "one-contract-per-file": "off",
+    "no-unused-vars": "off",
+    "no-empty-blocks": "off",
+    "no-console": "off"
   }
 }

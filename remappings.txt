@@ -1,3 +1,6 @@
+@uniswap/v2-periphery/=node_modules/@uniswap/v2-periphery/contracts/
+@openzeppelin/=node_modules/@openzeppelin/contracts/
+
 forge-std/=node_modules/forge-std/src
 halmos-cheatcodes=node_modules/halmos-cheatcodes
 
