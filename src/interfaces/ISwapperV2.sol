@@ -1,22 +1,32 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.23;
 
+import {IUniswapV2Router02} from '@uniswap/v2-periphery/interfaces/IUniswapV2Router02.sol';
+
 /**
  * @title Swapper Contract
  * @author thelostone-mc
  * @notice Simple swapper contract to pool, swap and withdraw tokens
  */
-interface ISwapper {
-  /*///////////////////////////////////////////////////////////////
-                            Structs
-  //////////////////////////////////////////////////////////////*/
+interface ISwapperV2 {
+  /**
+   * @notice Struct to track deposit information
+   * @param amount The amount of tokens deposited
+   * @param swapIndex The index of the swap this deposit is for
+   */
+  struct Deposits {
+    uint256 amount;
+    uint256 swapIndex;
+  }
 
-  /// @notice Struct of user
-  struct SwapInfo {
-    /// @notice Amount of tokens deposited
-    uint256 depositTokenAmount;
-    /// @notice Has the user withdrawn their tokens
-    bool hasWithdrawn;
+  /**
+   * @notice Struct to track swap rate information
+   * @param totalDeposited The total amount of tokens deposited
+   * @param totalSwapped The total amount of tokens swapped
+   */
+  struct SwapRateInfo {
+    uint256 totalDeposited;
+    uint256 totalSwapped;
   }
 
   /*///////////////////////////////////////////////////////////////
@@ -116,14 +126,14 @@ interface ISwapper {
   function SWAPPED_TOKEN() external view returns (address);
 
   /**
-   * @notice Whether the swap has been executed
+   * @notice The router to be used for swapping
    */
-  function swapped() external view returns (bool);
+  function ROUTER() external view returns (IUniswapV2Router02);
 
   /**
-   * @notice The mapping of user to swap info
+   * @notice The index of the current swap
    */
-  function userToSwapInfo(address _user) external view returns (SwapInfo memory);
+  function getSwapIndex() external view returns (uint256);
 
   /*///////////////////////////////////////////////////////////////
                             Logic
@@ -156,6 +166,20 @@ interface ISwapper {
    * @return The amount of tokens the user is entitled to
    */
   function getSwapTokenAmount(address _user) external view returns (uint256);
+
+  /**
+   * @notice The swap rate info for a given swap index
+   * @param _index The index of the swap
+   * @return The swap rate info
+   */
+  function getSwapRateInfo(uint256 _index) external view returns (SwapRateInfo memory);
+
+  /**
+   * @notice The deposits for a given user
+   * @param _user The address of the user
+   * @return The deposits
+   */
+  function getDeposits(address _user) external view returns (Deposits[] memory);
 
   /**
    * @notice Emergency withdraw function to withdraw tokens from the contract
