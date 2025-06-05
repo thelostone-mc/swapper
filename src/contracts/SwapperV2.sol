@@ -127,17 +127,14 @@ contract SwapperV2 is ISwapperV2, Ownable, ReentrancyGuard {
     Deposits[] storage _deposits = _userDeposits[msg.sender];
     uint256 _withdrawableAmount = 0;
 
-    uint256 i = 0;
-    while (i < _deposits.length) {
+    for (uint256 i = _deposits.length; i > 0;) {
+      i--;
+      // If the deposit is not yet swapped, add the amount to the withdrawable amount
       if (_deposits[i].swapIndex >= _swapIndex) {
         _withdrawableAmount += _deposits[i].amount;
-
         // Remove the element by swapping with the last and popping
         _deposits[i] = _deposits[_deposits.length - 1];
         _deposits.pop();
-        // Do not increment i since the new item at i needs to be checked
-      } else {
-          i++;
       }
     }
 
@@ -157,12 +154,35 @@ contract SwapperV2 is ISwapperV2, Ownable, ReentrancyGuard {
   /// @inheritdoc ISwapperV2
   function withdraw() external nonReentrant {
     // Get the deposits for the user
-    uint256 _withdrawableAmount = _getSwapTokenAmount(msg.sender);
+    Deposits[] storage deposits = _userDeposits[msg.sender];
+    uint256 len = deposits.length;
+    uint256 _withdrawableAmount = 0;
+
+    // Create a temporary array in memory to hold pending (not-yet-swapped) deposits
+    Deposits[] memory pending = new Deposits[](len);
+    uint256 pendingCount = 0;
+
+    for (uint256 i = 0; i < len; i++) {
+      // If the deposit has been swapped (swapIndex < _swapIndex), add to withdrawable amount
+      if (deposits[i].swapIndex < _swapIndex) {
+        // Calculate the user's share of swapped tokens for this deposit
+        SwapRateInfo memory _swapRateInfo = _swaps[deposits[i].swapIndex];
+        _withdrawableAmount += deposits[i].amount * _swapRateInfo.totalSwapped / _swapRateInfo.totalDeposited;
+      } else {
+        // Otherwise, keep the deposit for future swaps
+        pending[pendingCount] = deposits[i];
+        pendingCount++;
+      }
+    }
+
+    // Remove all deposits for the user
+    delete _userDeposits[msg.sender];
+    // Add back only the pending (not-yet-swapped) deposits
+    for (uint256 i = 0; i < pendingCount; i++) {
+      _userDeposits[msg.sender].push(pending[i]);
+    }
 
     if (_withdrawableAmount == 0) revert Swapper_NoTokensToWithdraw();
-
-    // Delete the deposits for the user
-    delete _userDeposits[msg.sender];
 
     // Withdraw the tokens
     if (SWAPPED_TOKEN == address(0)) {
